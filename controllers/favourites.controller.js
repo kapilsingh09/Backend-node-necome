@@ -4,17 +4,40 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Favourites } from "../models/favourites.model.js";
 
 /**
- * Get user's favourites
+ * Get user's favourites with pagination
  */
 export const getFavourites = asyncHandler(async (req, res) => {
     const userId = req.user._id;
 
+    // Get pagination parameters from query string
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination info
+    const totalCount = await Favourites.countDocuments({ userId });
+
+    // Get paginated results
     const favourites = await Favourites.find({ userId })
         .sort({ createdAt: -1 })
-        .select("-userId -__v");
+        .select("-userId -__v")
+        .skip(skip)
+        .limit(limit);
+
+    const totalPages = Math.ceil(totalCount / limit);
 
     return res.status(200).json(
-        new ApiResponse(200, { favourites }, "Favourites fetched successfully")
+        new ApiResponse(200, { 
+            favourites,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalItems: totalCount,
+                itemsPerPage: limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        }, "Favourites fetched successfully")
     );
 });
 
@@ -24,7 +47,7 @@ export const getFavourites = asyncHandler(async (req, res) => {
 export const addToFavourites = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const { animeId, title, image } = req.body;
-
+    
     if (!animeId || !title || !image) {
         throw new ApiError(400, "Anime ID, title, and image are required");
     }

@@ -4,17 +4,40 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Watchlist } from "../models/watchlist.model.js";
 
 /**
- * Get user's watchlist
+ * Get user's watchlist with pagination
  */
 export const getWatchlist = asyncHandler(async (req, res) => {
     const userId = req.user._id;
 
+    // Get pagination parameters from query string
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination info
+    const totalCount = await Watchlist.countDocuments({ userId });
+
+    // Get paginated results
     const watchlist = await Watchlist.find({ userId })
         .sort({ createdAt: -1 })
-        .select("-userId -__v");
+        .select("-userId -__v")
+        .skip(skip)
+        .limit(limit);
+
+    const totalPages = Math.ceil(totalCount / limit);
 
     return res.status(200).json(
-        new ApiResponse(200, { watchlist }, "Watchlist fetched successfully")
+        new ApiResponse(200, { 
+            watchlist,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalItems: totalCount,
+                itemsPerPage: limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        }, "Watchlist fetched successfully")
     );
 });
 
@@ -25,17 +48,40 @@ export const createMyWatchlist = asyncHandler(async (req,res)=>{
     )
 })
 /**
- * Get user's seen anime (watchlist items with seen: true)
+ * Get user's seen anime (watchlist items with seen: true) with pagination
  */
 export const getSeenAnime = asyncHandler(async (req, res) => {
     const userId = req.user._id;
 
+    // Get pagination parameters from query string
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination info
+    const totalCount = await Watchlist.countDocuments({ userId, seen: true });
+
+    // Get paginated results
     const seenAnime = await Watchlist.find({ userId, seen: true })
         .sort({ createdAt: -1 })
-        .select("-userId -__v");
+        .select("-userId -__v")
+        .skip(skip)
+        .limit(limit);
+
+    const totalPages = Math.ceil(totalCount / limit);
 
     return res.status(200).json(
-        new ApiResponse(200, { seenAnime }, "Seen anime fetched successfully")
+        new ApiResponse(200, { 
+            seenAnime,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalItems: totalCount,
+                itemsPerPage: limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        }, "Seen anime fetched successfully")
     );
 });
 
