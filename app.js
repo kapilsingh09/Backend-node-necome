@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from "cookie-parser";
+import rateLimit from 'express-rate-limit';
 import animeRoutes from './routes/anime.routes.js'
 import path from 'path'
 import { fileURLToPath } from 'url';
@@ -24,17 +25,44 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"))
 
+// Rate limiter for general API routes
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again after 15 minutes',
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// Stricter rate limiter for auth routes (login/register)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login attempts per windowMs
+  message: {
+    success: false,
+    message: 'Too many login attempts from this IP, please try again after 15 minutes',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful requests
+});
+
 app.use('/videos', express.static(path.join(__dirname, '..', 'videos')));
 app.use('/videos', express.static('videos'));
      
-app.use("/api/auth", authRoutes);
-app.use("/api/available_data", availableDataRoutes);
-app.use("/api/anime", animeRoutes);
-app.use("/api/watchlist", watchlistRoutes);
-app.use("/api/favourites", favouritesRoutes);
+// Apply strict rate limiter to auth routes (login/register)
+app.use("/api/auth", authLimiter, authRoutes);
 
-//create playlist of anime route
-app.use("/api/playlist",playlistRoutes)
+// Apply general rate limiter to other API routes
+app.use("/api/available_data", apiLimiter, availableDataRoutes);
+app.use("/api/anime", apiLimiter, animeRoutes);
+app.use("/api/watchlist", apiLimiter, watchlistRoutes);
+app.use("/api/favourites", apiLimiter, favouritesRoutes);
+app.use("/api/playlist", apiLimiter, playlistRoutes);
+
 // app.use("/api/unified", unifiedAnimeRoutes);
 // app.use("/api/my-watchlist", myWatchlistRoutes);
 

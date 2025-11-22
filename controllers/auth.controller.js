@@ -88,33 +88,105 @@ export const login = asyncHandler(async (req, res) => {
     "-password -refreshToken" // ✅ lowercase refreshToken (your code had capital R)
   );
 
-  const cookieAge = rememberMe
-    ? 7 * 24 * 60 * 60 * 1000
-    : 60 * 60 * 1000;
+  // Separate cookie options for access and refresh tokens
+  const accessTokenAge = 15 * 60 * 1000; // 15 minutes
+  const refreshTokenAge = rememberMe
+    ? 7 * 24 * 60 * 60 * 1000  // 7 days
+    : 24 * 60 * 60 * 1000;      // 1 day
 
-  const options = {
+  const accessTokenOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: cookieAge,
+    maxAge: accessTokenAge,
+  };
+
+  const refreshTokenOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: refreshTokenAge,
   };
 
   return res
     .status(200)
-    // ✅ fixed typo `.cokkie` → `.cookie`
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, accessTokenOptions)
+    .cookie("refreshToken", refreshToken, refreshTokenOptions)
     .json(
       new ApiResponse(
         200,
         {
           user: loggedInUser,
           accessToken,
-          refreshToken,
+          // ✅ Do NOT send refreshToken in response body (security)
         },
         "User logged in Successfully"
       )
     );
+});
+
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken = req.cookies?.refreshToken;
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Refresh token not found");
+  }
+
+  try {
+    // Verify the refresh token
+    const decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET
+    );
+
+    // Find user by ID from token
+    const user = await User.findById(decodedToken?._id);
+
+    if (!user) {
+      throw new ApiError(401, "Invalid refresh token");
+    }
+
+    // Check if refresh token matches the one stored in database
+    if (incomingRefreshToken !== user?.refreshToken) {
+      throw new ApiError(401, "Refresh token is expired or used");
+    }
+
+    // Generate new tokens (token rotation)
+    const { accessToken, refreshToken: newRefreshToken } =
+      await generateAccesTokenAndRefreshTokens(user._id);
+
+    // Separate cookie options for access and refresh tokens
+    const accessTokenAge = 15 * 60 * 1000; // 15 minutes
+    const refreshTokenAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    const accessTokenOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: accessTokenAge,
+    };
+
+    const refreshTokenOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: refreshTokenAge,
+    };
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, accessTokenOptions)
+      .cookie("refreshToken", newRefreshToken, refreshTokenOptions)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken },
+          "Access token refreshed successfully"
+        )
+      );
+  } catch (error) {
+    throw new ApiError(401, error?.message || "Invalid refresh token");
+  }
 });
 
 export const logOutUser = asyncHandler(async (req, res) => {

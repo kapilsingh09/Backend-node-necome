@@ -49,7 +49,7 @@ userSchema.methods.generateAccesToken = function(){
         username:this.username,
 
     }, process.env.ACCESS_TOKEN_SECRET,{
-        expiresIn:process.env.ACCESS_TOKEN_EXPIRY
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '15m' // Default 15 minutes
     })   
 }
 
@@ -61,7 +61,7 @@ userSchema.methods.generateRefreshToken = function(){
         // username:this.username,
 
     }, process.env.REFRESH_TOKEN_SECRET || process.env.ACCESS_TOKEN_SECRET,{
-        expiresIn:process.env.REFRESH_TOKEN_EXPIRY || process.env.ACCESS_TOKEN_EXPIRY
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '7d' // Default 7 days
     })   
 }
 
