@@ -9,6 +9,9 @@ import authRoutes from './routes/auth.routes.js';
 import availableDataRoutes from './routes/available.routes.js'
 import watchlistRoutes from './routes/watchlist.routes.js';
 import favouritesRoutes from './routes/favourites.routes.js';
+
+import topRatedRoutes from './routes/topRated.routes.js';
+
 import playlistRoutes from './routes/createanimeplaylist.routes.js'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,8 +19,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true,
+  // origin: "http://localhost:5173",
+  // credentials: true,
 }));
 
 app.use(express.json());
@@ -62,7 +65,7 @@ app.use("/api/anime", apiLimiter, animeRoutes);
 app.use("/api/watchlist", apiLimiter, watchlistRoutes);
 app.use("/api/favourites", apiLimiter, favouritesRoutes);
 app.use("/api/playlist", apiLimiter, playlistRoutes);
-
+app.use("/api/top-rated", apiLimiter, topRatedRoutes);
 // app.use("/api/unified", unifiedAnimeRoutes);
 // app.use("/api/my-watchlist", myWatchlistRoutes);
 
