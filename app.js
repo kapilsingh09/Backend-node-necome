@@ -66,15 +66,12 @@ app.use("/api/watchlist", apiLimiter, watchlistRoutes);
 app.use("/api/favourites", apiLimiter, favouritesRoutes);
 app.use("/api/playlist", apiLimiter, playlistRoutes);
 app.use("/api/top-rated", apiLimiter, topRatedRoutes);
-// app.use("/api/unified", unifiedAnimeRoutes);
-// app.use("/api/my-watchlist", myWatchlistRoutes);
 
 
 app.get('/', (req, res) => {
   res.send('Hello from Express app! The server will start from server.js');
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
