@@ -4,6 +4,7 @@ import { API_ENDPOINTS } from "../config/api.js";
 
 const cache = new NodeCache({ stdTTL: 600 }); // 10 minutes
 
+// KITSU – TOP RATED ANIME
 export const getTopRatedAnime = async (req, res) => {
   try {
     const cacheKey = "kitsu_top_rated";
@@ -13,6 +14,7 @@ export const getTopRatedAnime = async (req, res) => {
       return res.status(200).json({
         success: true,
         source: "cache",
+        count: cachedData.length,
         data: cachedData,
       });
     }
@@ -49,7 +51,7 @@ export const getTopRatedAnime = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      source: "api",
+      source: "backend",
       count: normalizedData.length,
       data: normalizedData,
     });
@@ -59,6 +61,56 @@ export const getTopRatedAnime = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch top rated anime",
+    });
+  }
+};
+
+// JIKAN – TOP 5 RATED ANIME
+
+export const getTopFiveRatedAnime = async (req, res) => {
+  try {
+    const cacheKey = "jikan_top_five_rated";
+
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({
+        success: true,
+        source: "cache",
+        count: cachedData.length,
+        data: cachedData,
+      });
+    }
+
+    const response = await axios.get(API_ENDPOINTS.jikanTopRated);
+
+    const normalizedData = response.data.data.map((anime) => ({
+      id: anime.mal_id,
+      title: anime.title,
+      title_jp: anime.title_japanese || null,
+      synopsis: anime.synopsis,
+      rating: anime.score,
+      rank: anime.rank,
+      episodes: anime.episodes,
+      status: anime.status,
+      startDate: anime.aired?.from,
+      endDate: anime.aired?.to,
+      image: anime.images?.jpg?.image_url,
+    }));
+
+    cache.set(cacheKey, normalizedData);
+
+    res.status(200).json({
+      success: true,
+      source: "backend",
+      count: normalizedData.length,
+      data: normalizedData,
+    });
+  } catch (error) {
+    console.error("Jikan Top Five Rated Error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch top five rated anime",
     });
   }
 };
