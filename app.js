@@ -65,6 +65,8 @@ app.use("/api/anime", apiLimiter, animeRoutes);
 app.use("/api/watchlist", apiLimiter, watchlistRoutes);
 app.use("/api/favourites", apiLimiter, favouritesRoutes);
 app.use("/api/playlist", apiLimiter, playlistRoutes);
+
+//new routes fetching anime from backend new scheme
 app.use("/api/top-rated", apiLimiter, topRatedRoutes);
 
 

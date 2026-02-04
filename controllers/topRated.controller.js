@@ -114,3 +114,50 @@ export const getTopFiveRatedAnime = async (req, res) => {
     });
   }
 };
+
+
+//upcoming anime coming soon wale
+export const upcomingAnime = async (req, res) => {
+  try {
+    const cacheKey = "jikan_upcoming";
+
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      console.log("🔥 Upcoming from CACHE");
+      return res.status(200).json({
+        success: true,
+        source: "cache",
+        count: cachedData.length,
+        data: cachedData,
+      });
+    }
+
+    console.log("Upcoming from API");
+    const response = await axios.get(API_ENDPOINTS.jikanUpcoming);
+
+    const normalizedData = response.data.data.map((anime) => ({
+      id: anime.mal_id,
+      title: anime.title,
+      title_jp: anime.title_japanese || null,
+      synopsis: anime.synopsis,
+      rating: anime.score,
+      episodes: anime.episodes,
+      status: anime.status,
+      image: anime.images?.jpg?.image_url,
+    }));
+
+    cache.set(cacheKey, normalizedData);
+
+    res.status(200).json({
+      success: true,
+      source: "backend",
+      count: normalizedData.length,
+      data: normalizedData,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch upcoming anime",
+    });
+  }
+};
