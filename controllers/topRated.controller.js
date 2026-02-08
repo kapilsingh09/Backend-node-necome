@@ -133,6 +133,8 @@ export const upcomingAnime = async (req, res) => {
     }
 
     console.log("Upcoming from API");
+    console.log("Upcoming from API", API_ENDPOINTS.jikanUpcoming);
+    
     const response = await axios.get(API_ENDPOINTS.jikanUpcoming);
 
     const normalizedData = response.data.data.map((anime) => ({
@@ -155,9 +157,13 @@ export const upcomingAnime = async (req, res) => {
       data: normalizedData,
     });
   } catch (error) {
+    console.error("❌ Upcoming Anime Error:", error.message);
+    console.error("Full error:", error.response?.data || error);
+    
     res.status(500).json({
       success: false,
       message: "Failed to fetch upcoming anime",
+      error: error.message,
     });
   }
 };
