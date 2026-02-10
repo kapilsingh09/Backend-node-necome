@@ -7,5 +7,9 @@ export const API_ENDPOINTS = {
   jikanTopRated:
     `${baseJikanUrl}/top/anime?limit=5&sfw=true`,
   jikanUpcoming:
-    `${baseJikanUrl}/seasons/upcoming?limit=5`,
+    `${baseJikanUrl}/seasons/upcoming?limit=13`,
 };
+
+const API_KITSU = {
+    
+}

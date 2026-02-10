@@ -123,7 +123,7 @@ export const upcomingAnime = async (req, res) => {
 
     const cachedData = cache.get(cacheKey);
     if (cachedData) {
-      console.log("🔥 Upcoming from CACHE");
+      console.log("🔥hi Upcoming from CACHE");
       return res.status(200).json({
         success: true,
         source: "cache",
