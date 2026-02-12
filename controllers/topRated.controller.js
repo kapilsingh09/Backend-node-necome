@@ -167,3 +167,57 @@ export const upcomingAnime = async (req, res) => {
     });
   }
 };
+
+// const 
+
+export const getTrendingAnime = async (req, res) => {
+  try {
+    const cacheKey = "jikan_trending";
+
+    const cachedData = cache.get(cacheKey);
+
+    if (cachedData) {
+      console.log("🔥 Trending from CACHE");
+
+      return res.status(200).json({
+        success: true,
+        source: "cache",
+        count: cachedData.length,
+        data: cachedData,
+      });
+    }
+
+    console.log("📡 Fetching Trending from API...");
+
+    const response = await axios.get(API_ENDPOINTS.trendingAnime);
+    const normalizedData = response.data.data.map((anime) => ({
+      id: anime.mal_id,
+      title: anime.title,
+      title_jp: anime.title_japanese || null,
+      synopsis: anime.synopsis,
+      rating: anime.score,
+      episodes: anime.episodes,
+      status: anime.status,
+      image: anime.images?.jpg?.image_url,
+    }));
+
+    cache.set(cacheKey, normalizedData, 600);
+
+    return res.status(200).json({
+      success: true,
+      source: "backend",
+      count: normalizedData.length,
+      data: normalizedData,
+    });
+
+  } catch (error) {
+    console.error("❌ Trending Anime Error:", error.message);
+    console.error("Full error:", error.response?.data || error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch trending anime",
+      error: error.message,
+    });
+  }
+};

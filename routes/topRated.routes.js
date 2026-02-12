@@ -2,6 +2,7 @@ import express from "express";
 import { 
     getTopFiveRatedAnime, 
     getTopRatedAnime, 
+    getTrendingAnime, 
     upcomingAnime 
 
 } from "../controllers/topRated.controller.js";
@@ -16,6 +17,8 @@ router.get("/top-rated", getTopRatedAnime);
 router.get("/top-five-rated",getTopFiveRatedAnime);
 //here the upcoming anime
 router.get("/upcoming",upcomingAnime)
+//here the trending anime
+router.get("/trending-all-time",getTrendingAnime)
 
 
 export default router;
