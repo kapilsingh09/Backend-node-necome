@@ -138,14 +138,17 @@ export const upcomingAnime = async (req, res) => {
     const response = await axios.get(API_ENDPOINTS.jikanUpcoming);
 
     const normalizedData = response.data.data.map((anime) => ({
-      id: anime.mal_id,
+      mal_id: anime.mal_id,
       title: anime.title,
-      title_jp: anime.title_japanese || null,
+      title_english: anime.title_english || null,
+      title_japanese: anime.title_japanese || null,
       synopsis: anime.synopsis,
-      rating: anime.score,
+      score: anime.score,
       episodes: anime.episodes,
+      type: anime.type,
       status: anime.status,
-      image: anime.images?.jpg?.image_url,
+      images: anime.images,
+      genres: anime.genres,
     }));
 
     cache.set(cacheKey, normalizedData);
@@ -191,14 +194,17 @@ export const getTrendingAnime = async (req, res) => {
 
     const response = await axios.get(API_ENDPOINTS.trendingAnime);
     const normalizedData = response.data.data.map((anime) => ({
-      id: anime.mal_id,
+      mal_id: anime.mal_id,
       title: anime.title,
-      title_jp: anime.title_japanese || null,
+      title_english: anime.title_english || null,
+      title_japanese: anime.title_japanese || null,
       synopsis: anime.synopsis,
-      rating: anime.score,
+      score: anime.score,
       episodes: anime.episodes,
+      type: anime.type,
       status: anime.status,
-      image: anime.images?.jpg?.image_url,
+      images: anime.images,
+      genres: anime.genres,
     }));
 
     cache.set(cacheKey, normalizedData, 600);
@@ -217,6 +223,109 @@ export const getTrendingAnime = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch trending anime",
+      error: error.message,
+    });
+  }
+};
+
+// KITSU – SPRING 2024 MOST POPULAR
+export const getSpring2024Popular = async (req, res) => {
+  try {
+    const cacheKey = "kitsu_spring2024_popular";
+
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({
+        success: true,
+        source: "cache",
+        count: cachedData.length,
+        data: cachedData,
+      });
+    }
+
+    const response = await axios.get(
+      "https://kitsu.io/api/edge/anime?sort=-userCount&filter[season]=spring&filter[year]=2024&page[limit]=6"
+    );
+
+    const normalizedData = response.data.data.map((anime) => ({
+      id: anime.id,
+      attributes: anime.attributes,
+      title:
+        anime.attributes.titles.en ||
+        anime.attributes.titles.en_jp ||
+        anime.attributes.titles.ja_jp,
+      episodes: anime.attributes.episodeCount,
+      rating: anime.attributes.averageRating
+        ? Number(anime.attributes.averageRating) / 10
+        : null,
+      posterImage: anime.attributes.posterImage?.medium,
+      coverImage: anime.attributes.coverImage?.large,
+    }));
+
+    cache.set(cacheKey, normalizedData);
+
+    res.status(200).json({
+      success: true,
+      source: "backend",
+      count: normalizedData.length,
+      data: normalizedData,
+    });
+  } catch (error) {
+    console.error("❌ Spring 2024 Popular Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch Spring 2024 popular anime",
+      error: error.message,
+    });
+  }
+};
+
+// JIKAN – TOP RATED ONA
+export const getTopRatedONA = async (req, res) => {
+  try {
+    const cacheKey = "jikan_top_rated_ona";
+
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({
+        success: true,
+        source: "cache",
+        count: cachedData.length,
+        data: cachedData,
+      });
+    }
+
+    const response = await axios.get(
+      "https://api.jikan.moe/v4/top/anime?type=ona&limit=6"
+    );
+
+    const normalizedData = response.data.data.map((anime) => ({
+      mal_id: anime.mal_id,
+      title: anime.title,
+      title_english: anime.title_english || null,
+      title_japanese: anime.title_japanese || null,
+      synopsis: anime.synopsis,
+      score: anime.score,
+      episodes: anime.episodes,
+      type: anime.type,
+      status: anime.status,
+      images: anime.images,
+      genres: anime.genres,
+    }));
+
+    cache.set(cacheKey, normalizedData);
+
+    res.status(200).json({
+      success: true,
+      source: "backend",
+      count: normalizedData.length,
+      data: normalizedData,
+    });
+  } catch (error) {
+    console.error("❌ Top Rated ONA Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch top rated ONA anime",
       error: error.message,
     });
   }
