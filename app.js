@@ -11,6 +11,7 @@ import watchlistRoutes from './routes/watchlist.routes.js';
 import favouritesRoutes from './routes/favourites.routes.js';
 
 import topRatedRoutes from './routes/topRated.routes.js';
+import getBannerRoutes from './routes/getbanner.routes.js';
 
 import playlistRoutes from './routes/createanimeplaylist.routes.js'
 const __filename = fileURLToPath(import.meta.url);
@@ -65,7 +66,7 @@ app.use("/api/anime", apiLimiter, animeRoutes);
 app.use("/api/watchlist", apiLimiter, watchlistRoutes);
 app.use("/api/favourites", apiLimiter, favouritesRoutes);
 app.use("/api/playlist", apiLimiter, playlistRoutes);
-
+app.use("/api/banner", apiLimiter, getBannerRoutes);
 //new routes fetching anime from backend new scheme
 app.use("/api/top-rated", apiLimiter, topRatedRoutes);
 
